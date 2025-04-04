@@ -36,7 +36,7 @@ Execute o aplicativo diretamente na linha de comando:
 
 ### Exemplo
 
-Para realizar um teste de carga no `http://google.com` com 1000 requisições e nível de concorrência de 10:
+Para realizar um teste de carga no `http://google.com` com 10 requisições e nível de concorrência de 5:
 
 ```bash
 ./loadtest --url=https://httpbin.org/status/200,404,500 --requests=10 --concurrency=5
