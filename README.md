@@ -39,7 +39,7 @@ Execute o aplicativo diretamente na linha de comando:
 Para realizar um teste de carga no `http://google.com` com 1000 requisições e nível de concorrência de 10:
 
 ```bash
-./loadtest --url=http://google.com --requests=10 --concurrency=5
+./loadtest --url=https://httpbin.org/status/200,404,500 --requests=10 --concurrency=5
 ```
 
 ## Docker
@@ -53,7 +53,7 @@ Para realizar um teste de carga no `http://google.com` com 1000 requisições e 
 2. Execute o contêiner com os parâmetros desejados:
 
    ```bash
-   docker run go-loadtest --url=http://google.com --requests=1000 --concurrency=10
+   docker run go-loadtest --url=https://httpbin.org/status/200,404,500 --requests=100 --concurrency=10
    ```
 
 ## Relatório
