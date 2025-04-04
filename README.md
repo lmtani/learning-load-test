@@ -17,7 +17,7 @@ Go Load Test é um aplicativo de linha de comando (CLI) escrito em Go para reali
 
    ```bash
    git clone https://github.com/lmtani/learning-load-test.git
-   cd go-loadtest
+   cd learning-load-test
    ```
 
 3. Compile o aplicativo:
