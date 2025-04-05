@@ -63,14 +63,14 @@ func RenderReport(report *entities.Report) string {
 		fmt.Sprintf("Total Requests:    %s", infoStyle.Render(fmt.Sprintf("%d", report.TotalRequests))),
 		fmt.Sprintf("Successful:        %s  (%0.1f%%)", successStyle.Render(fmt.Sprintf("%d", report.SuccessfulRequests)), successRate),
 		fmt.Sprintf("Failed:            %s  (%0.1f%%)", failureStyle.Render(fmt.Sprintf("%d", report.FailedRequests)), 100-successRate),
-		fmt.Sprintf("Total Time:        %s", infoStyle.Render(report.TotalTime.String())),
+		fmt.Sprintf("Total Time:        %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.TotalTime.Seconds()))),
 
-		"Response Time Statistics:",
-		fmt.Sprintf("Min Response Time: %s", infoStyle.Render(report.MinResponseTime.String())),
-		fmt.Sprintf("Avg Response Time: %s", infoStyle.Render(report.AvgResponseTime.String())),
-		fmt.Sprintf("Max Response Time: %s", infoStyle.Render(report.MaxResponseTime.String())),
-		fmt.Sprintf("P50 Response Time: %s", infoStyle.Render(report.P50ResponseTime.String())),
-		fmt.Sprintf("P95 Response Time: %s", infoStyle.Render(report.P95ResponseTime.String())),
+		"Time Statistics:",
+		fmt.Sprintf("Min Time:          %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.MinResponseTime.Seconds()))),
+		fmt.Sprintf("Avg Time:          %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.AvgResponseTime.Seconds()))),
+		fmt.Sprintf("Max Time:          %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.MaxResponseTime.Seconds()))),
+		fmt.Sprintf("P50:               %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.P50ResponseTime.Seconds()))),
+		fmt.Sprintf("P95:               %s", infoStyle.Render(fmt.Sprintf("%.3fs", report.P95ResponseTime.Seconds()))),
 	)
 
 	summaryBox := boxStyle.Render(summaryContent)
@@ -90,6 +90,16 @@ func RenderReport(report *entities.Report) string {
 
 		// Table rows
 		var rows []string
+		statusColumnWidth := 20
+		countColumnWidth := 10
+		percentColumnWidth := 15
+
+		// Apply widths to header cells
+		statusHeader = tableHeaderStyle.Width(statusColumnWidth).Render("Status")
+		countHeader = tableHeaderStyle.Width(countColumnWidth).Render("Count")
+		percentHeader = tableHeaderStyle.Width(percentColumnWidth).Render("Percentage")
+		tableHeader = lipgloss.JoinHorizontal(lipgloss.Top, statusHeader, countHeader, percentHeader)
+
 		for code, count := range report.StatusCodeDistribution {
 			percentage := float64(count) / float64(report.TotalRequests) * 100
 
@@ -107,9 +117,9 @@ func RenderReport(report *entities.Report) string {
 				statusText = fmt.Sprintf("%d", code)
 			}
 
-			statusCell := tableCellStyle.Render(statusText)
-			countCell := tableCellStyle.Render(fmt.Sprintf("%d", count))
-			percentCell := tableCellStyle.Render(fmt.Sprintf("%.1f%%", percentage))
+			statusCell := tableCellStyle.Width(statusColumnWidth).Render(statusText)
+			countCell := tableCellStyle.Width(countColumnWidth).Render(fmt.Sprintf("%d", count))
+			percentCell := tableCellStyle.Width(percentColumnWidth).Render(fmt.Sprintf("%.1f%%", percentage))
 
 			row := lipgloss.JoinHorizontal(lipgloss.Top, statusCell, countCell, percentCell)
 			rows = append(rows, row)

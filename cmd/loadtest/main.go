@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/lmtani/learning-go-loadtest/internal/executor"
+	"github.com/lmtani/learning-go-loadtest/internal/ui"
 )
 
 func main() {
@@ -33,5 +34,5 @@ func main() {
 	}
 
 	// Render the report
-	report.Render()
+	fmt.Println(ui.RenderReport(report))
 }

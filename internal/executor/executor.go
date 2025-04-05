@@ -121,7 +121,7 @@ func ExecuteLoadTest(url string, totalRequests, concurrency int) (*entities.Repo
 	}
 
 	// Calculate failed requests
-	result.FailedRequests = totalRequests - len(result.ResponseTimes)
+	result.FailedRequests = totalRequests - result.SuccessfulRequests
 
 	return result, nil
 }
