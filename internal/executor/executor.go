@@ -10,10 +10,19 @@ import (
 	"github.com/lmtani/learning-go-loadtest/internal/entities"
 )
 
+// ProgressUpdate contains information about the current progress of the load test
+type ProgressUpdate struct {
+	CompletedRequests int
+	TotalRequests     int
+	ElapsedTime       time.Duration
+}
+
 // ExecuteLoadTest performs a load test against the specified URL
-func ExecuteLoadTest(url string, totalRequests, concurrency int) (*entities.Report, error) {
+// If progressCh is not nil, it will send progress updates through the channel
+func ExecuteLoadTest(url string, totalRequests, concurrency int, progressCh chan<- ProgressUpdate) (*entities.Report, error) {
 	var wg sync.WaitGroup
 	startTime := time.Now()
+	var completedRequests int
 
 	// Initialize the report with enhanced fields
 	result := &entities.Report{
@@ -29,6 +38,35 @@ func ExecuteLoadTest(url string, totalRequests, concurrency int) (*entities.Repo
 	// Channel for limiting concurrency
 	sem := make(chan struct{}, concurrency)
 	var resultMutex sync.Mutex
+
+	// For tracking progress
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	// Start a goroutine to report progress
+	if progressCh != nil {
+		go func() {
+			for range ticker.C {
+				resultMutex.Lock()
+				completed := completedRequests
+				resultMutex.Unlock()
+
+				select {
+				case progressCh <- ProgressUpdate{
+					CompletedRequests: completed,
+					TotalRequests:     totalRequests,
+					ElapsedTime:       time.Since(startTime),
+				}:
+				default:
+					// Non-blocking send to prevent slowdowns if channel is not being read
+				}
+
+				if completed >= totalRequests {
+					return
+				}
+			}
+		}()
+	}
 
 	// Execute requests
 	for i := 0; i < totalRequests; i++ {
@@ -62,6 +100,9 @@ func ExecuteLoadTest(url string, totalRequests, concurrency int) (*entities.Repo
 
 			resultMutex.Lock()
 			defer resultMutex.Unlock()
+
+			// Increment completed requests counter for progress tracking
+			completedRequests++
 
 			// Update status code statistics
 			if resp.StatusCode == http.StatusOK {

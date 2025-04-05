@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/lmtani/learning-go-loadtest/internal/executor"
 	"github.com/lmtani/learning-go-loadtest/internal/ui"
@@ -27,12 +28,34 @@ func main() {
 	fmt.Printf("Concurrency: %d\n", *concurrency)
 	fmt.Println("Please wait...")
 
-	// Execute the load test
-	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency)
+	// Create a channel for progress updates
+	progressCh := make(chan executor.ProgressUpdate)
+
+	// Start a goroutine to display progress
+	go func() {
+		for progress := range progressCh {
+			ui.ClearProgressBar()
+
+			// Render and print the progress bar
+			fmt.Println(ui.RenderProgressBar(progress))
+		}
+	}()
+
+	// Execute the load test with progress reporting
+	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency, progressCh)
 	if err != nil {
 		log.Fatalf("Error executing load test: %v", err)
 	}
 
-	// Render the report
+	// Close the progress channel
+	close(progressCh)
+
+	// Sleep briefly to ensure the progress display is complete
+	time.Sleep(200 * time.Millisecond)
+
+	// Clear the progress bar before showing the final report
+	ui.ClearProgressBar()
+
+	// Render the final report
 	fmt.Println(ui.RenderReport(report))
 }
