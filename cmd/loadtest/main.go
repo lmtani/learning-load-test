@@ -15,6 +15,8 @@ func main() {
 	url := flag.String("url", "", "URL of the service to test")
 	requests := flag.Int("requests", 100, "Total number of requests to perform")
 	concurrency := flag.Int("concurrency", 1, "Number of concurrent requests")
+	httpVerb := flag.String("http-verb", "GET", "HTTP verb to use (GET, POST, PUT, DELETE, etc.)")
+	jsonContent := flag.String("json", "", "Optional JSON content to send with the request (e.g., '{\"body\": \"test\"}')")
 	flag.Parse()
 
 	if *url == "" {
@@ -24,6 +26,10 @@ func main() {
 	// Display a welcome message
 	fmt.Println("Starting load test...")
 	fmt.Printf("URL: %s\n", *url)
+	fmt.Printf("HTTP Verb: %s\n", *httpVerb)
+	if *jsonContent != "" {
+		fmt.Printf("JSON Content: %s\n", *jsonContent)
+	}
 	fmt.Printf("Requests: %d\n", *requests)
 	fmt.Printf("Concurrency: %d\n", *concurrency)
 	fmt.Println("Please wait...")
@@ -42,7 +48,7 @@ func main() {
 	}()
 
 	// Execute the load test with progress reporting
-	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency, progressCh)
+	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency, *httpVerb, *jsonContent, progressCh)
 	if err != nil {
 		log.Fatalf("Error executing load test: %v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +20,7 @@ type ProgressUpdate struct {
 
 // ExecuteLoadTest performs a load test against the specified URL
 // If progressCh is not nil, it will send progress updates through the channel
-func ExecuteLoadTest(url string, totalRequests, concurrency int, progressCh chan<- ProgressUpdate) (*entities.Report, error) {
+func ExecuteLoadTest(url string, totalRequests, concurrency int, httpVerb, jsonContent string, progressCh chan<- ProgressUpdate) (*entities.Report, error) {
 	var wg sync.WaitGroup
 	startTime := time.Now()
 	var completedRequests int
@@ -83,7 +84,30 @@ func ExecuteLoadTest(url string, totalRequests, concurrency int, progressCh chan
 			requestStart := time.Now()
 
 			// Execute the request
-			resp, err := http.Get(url)
+			var resp *http.Response
+			var err error
+
+			// Create request with specified HTTP verb and optional JSON content
+			if jsonContent != "" {
+				req, reqErr := http.NewRequest(httpVerb, url, strings.NewReader(jsonContent))
+				if reqErr != nil {
+					resultMutex.Lock()
+					result.FailedRequests++
+					resultMutex.Unlock()
+					return
+				}
+				req.Header.Set("Content-Type", "application/json")
+				resp, err = http.DefaultClient.Do(req)
+			} else {
+				req, reqErr := http.NewRequest(httpVerb, url, nil)
+				if reqErr != nil {
+					resultMutex.Lock()
+					result.FailedRequests++
+					resultMutex.Unlock()
+					return
+				}
+				resp, err = http.DefaultClient.Do(req)
+			}
 			if err != nil {
 				resultMutex.Lock()
 				result.FailedRequests++
