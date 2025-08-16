@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/lmtani/learning-go-loadtest/internal/executor"
+	"github.com/lmtani/learning-go-loadtest/internal/ui"
 )
 
 func main() {
@@ -13,6 +15,8 @@ func main() {
 	url := flag.String("url", "", "URL of the service to test")
 	requests := flag.Int("requests", 100, "Total number of requests to perform")
 	concurrency := flag.Int("concurrency", 1, "Number of concurrent requests")
+	httpVerb := flag.String("http-verb", "GET", "HTTP verb to use (GET, POST, PUT, DELETE, etc.)")
+	jsonContent := flag.String("json", "", "Optional JSON content to send with the request (e.g., '{\"body\": \"test\"}')")
 	flag.Parse()
 
 	if *url == "" {
@@ -22,16 +26,42 @@ func main() {
 	// Display a welcome message
 	fmt.Println("Starting load test...")
 	fmt.Printf("URL: %s\n", *url)
+	fmt.Printf("HTTP Verb: %s\n", *httpVerb)
+	if *jsonContent != "" {
+		fmt.Printf("JSON Content: %s\n", *jsonContent)
+	}
 	fmt.Printf("Requests: %d\n", *requests)
 	fmt.Printf("Concurrency: %d\n", *concurrency)
 	fmt.Println("Please wait...")
 
-	// Execute the load test
-	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency)
+	// Create a channel for progress updates
+	progressCh := make(chan executor.ProgressUpdate)
+
+	// Start a goroutine to display progress
+	go func() {
+		for progress := range progressCh {
+			ui.ClearProgressBar()
+
+			// Render and print the progress bar
+			fmt.Println(ui.RenderProgressBar(progress))
+		}
+	}()
+
+	// Execute the load test with progress reporting
+	report, err := executor.ExecuteLoadTest(*url, *requests, *concurrency, *httpVerb, *jsonContent, progressCh)
 	if err != nil {
 		log.Fatalf("Error executing load test: %v", err)
 	}
 
-	// Render the report
-	report.Render()
+	// Close the progress channel
+	close(progressCh)
+
+	// Sleep briefly to ensure the progress display is complete
+	time.Sleep(200 * time.Millisecond)
+
+	// Clear the progress bar before showing the final report
+	ui.ClearProgressBar()
+
+	// Render the final report
+	fmt.Println(ui.RenderReport(report))
 }
